@@ -13,6 +13,21 @@ $settings = $this->getSettings();
 		<?php } ?>
 	
 		<ul id="usp_list">
+			<?php 
+				if (is_array($settings['usp_custom_fields'])) {
+					foreach ($settings['usp_custom_fields'] as $fieldname => $displayname) {
+						?>
+							<li class="usp_custom_field">
+								<label for="user-custom-field-<?=$fieldname?>" class="usp_label"><?php _e($displayname); ?></label>
+								<div>
+									<input class="usp_input" type="text" name="user-custom-field-<?=$fieldname?>" id="user-custom-field-<?=$fieldname?>" value="" />
+								</div>
+							</li>
+						<?php
+					}
+				}
+			?>
+		
 			<?php if ($settings['usp_name'] == 'show') { ?>
 			<li class="usp_name">
 				<label for="user-submitted-name" class="usp_label"><?php _e('Your Name'); ?></label>

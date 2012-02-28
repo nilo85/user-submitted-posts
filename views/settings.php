@@ -12,6 +12,10 @@ global $pagenow;
 	#usp_admin_form #usp_admin_table td { display: block; margin: 5px 10px; padding: 20px; border: 1px solid #ddd; background-color: #f8f8f8; }
 	#usp_admin_form #usp_admin_table h3 { margin: 0; }
 	#redirect-url { width: 500px; }
+	#usp_admin_form .custom_fields textarea {
+		width:100%;
+		height:300px;
+	}
 </style>
 <script type="text/javascript">
 	jQuery(document).ready(function () {
@@ -100,6 +104,19 @@ global $pagenow;
 									<option <?php if($settings['usp_images'] == 'show') echo 'selected="selected"'; ?> value="show"><?php _e('Show'); ?></option>
 									<option <?php if($settings['usp_images'] == 'hide') echo 'selected="selected"'; ?> value="hide"><?php _e('Hide'); ?></option>
 								</select> <?php _e('Post Images'); ?>
+							</li>
+							<li class="custom_fields">
+								<?php
+									$serializedCustomFields = '';
+									if (is_array($settings['usp_custom_fields'])) {
+										foreach ($settings['usp_custom_fields'] as $fieldname => $displayname) {
+										
+											$serializedCustomFields .= $fieldname . ' ' . $displayname . "\n";
+										}
+									}
+								?>
+								Custom fields: ( fieldname &lt;whitespace&gt; displayname &lt;linebreak&gt; )<br />
+								<textarea name="usp_custom_fields" ><?php _e($serializedCustomFields) ?></textarea>
 							</li>
 						</ul>
 					</td>
@@ -197,6 +214,19 @@ global $pagenow;
 							</select>
 						</p>
 					</td>
+				</tr>
+				<tr>
+					<td>
+						<h3><?php _e('Image field save format'); ?></h3>
+							<label for="image-save-format">
+								<input <?=($settings['usp_image_save_format'] == 'id'?'':'checked')?> type="radio" name="image-save-format" id="image-save-format-url" value="url" /> 
+									<?php _e('URL'); ?>
+							</label>
+							<label for="image-save-attatchmentid">
+								<input <?=($settings['usp_image_save_format'] == 'id'?'checked':'')?> type="radio" name="image-save-format" id="image-save-format-attatchmentid" value="id" /> 
+									<?php _e('Attachment ID'); ?>
+							</label>							
+						</td>
 				</tr>
 				<tr>
 					<td>

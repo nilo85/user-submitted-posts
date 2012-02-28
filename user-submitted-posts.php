@@ -72,8 +72,22 @@ if (!class_exists('Public_Submission_Form')) {
 				$tags = stripslashes($_POST['user-submitted-tags']);
 				$category = intval($_POST['user-submitted-category']);
 				$fileData = $_FILES['user-submitted-image'];
-				$publicSubmission = $this->createPublicSubmission($title, $content, $authorName, $authorUrl, $tags, $category, $fileData);
-
+				$customFields = array();
+				if (is_array($settings['usp_custom_fields'])) {
+					foreach ($settings['usp_custom_fields'] as $fieldname => $displayname) {
+						$customFields[$fieldname] = stripslashes($_POST['user-custom-field-'.$fieldname]);
+					}
+				}
+				if($settings['usp_title'] != 'show') {
+					$title = 'Untitled';
+				}
+				
+				$imageSaveFormat = 'url';
+				if ($settings['usp_image_save_format'] != null) {
+					$imageSaveFormat = $settings['usp_image_save_format'];
+				}
+				
+				$publicSubmission = $this->createPublicSubmission($title, $content, $authorName, $authorUrl, $tags, $category, $fileData, $customFields, $imageSaveFormat);
 				if (false == ($publicSubmission)) {
 					$errorMessage = empty($settings['error-message']) ? __('An error occurred.  Please go back and try again.') : $settings['error-message'];
 					if( !empty( $_POST[ 'redirect-override' ] ) ) {
@@ -125,6 +139,18 @@ if (!class_exists('Public_Submission_Form')) {
 				$settings['upload-message'] = stripslashes($_POST['upload-message']);
 				$settings['usp_form_width'] = stripslashes($_POST['usp_form_width']);
 
+				$customFieldsSerialized = str_replace("\r\n", "\n", $_POST['usp_custom_fields']."\n");
+				
+				
+				preg_match_all('/^\s*(?P<fieldname>\w+)\s+(?P<displayname>[^\s].+)$/m', $customFieldsSerialized."\n", $matches);
+				
+				$settings['usp_custom_fields'] = array();
+				foreach($matches['displayname'] as $index => $displayName) {
+					$settings['usp_custom_fields'][$matches['fieldname'][$index]] = $displayName;
+				}
+				
+				$settings['usp_image_save_format'] = $_POST['image-save-format'];
+				
 				$this->saveSettings($settings);
 				wp_redirect(admin_url('options-general.php?page=user-submitted-posts&updated=1'));
 			}
@@ -225,7 +251,7 @@ if (!class_exists('Public_Submission_Form')) {
 			$this->settings = $settings;
 			update_option('User Submitted Posts Settings', $this->settings);
 		}
-		function createPublicSubmission($title, $content, $authorName, $authorUrl, $tags, $category, $fileData) {
+		function createPublicSubmission($title, $content, $authorName, $authorUrl, $tags, $category, $fileData, $customFields, $imageSaveFormat) {
 			$settings = $this->getSettings();
 			$authorName = strip_tags($authorName);
 			$authorUrl = strip_tags($authorUrl);
@@ -292,7 +318,14 @@ if (!class_exists('Public_Submission_Form')) {
 
 				if (!is_wp_error($attachmentId) && wp_attachment_is_image($attachmentId)) {
 					$attachmentIds[] = $attachmentId;
-					add_post_meta($newPost, $this->_post_meta_Image, wp_get_attachment_url($attachmentId));
+			
+					if ($imageSaveFormat == 'url') {
+						add_post_meta($newPost, $this->_post_meta_Image, wp_get_attachment_url($attachmentId));
+					} else {
+						add_post_meta($newPost, $this->_post_meta_Image, $attachmentId);
+					}
+			
+					
 					$imageCounter++;
 				} else {
 					wp_delete_attachment($attachmentId);
@@ -312,6 +345,11 @@ if (!class_exists('Public_Submission_Form')) {
 			update_post_meta($newPost, $this->_post_meta_Submitter, htmlentities(($authorName)));
 			update_post_meta($newPost, $this->_post_meta_SubmitterUrl, htmlentities(($authorUrl)));
 			update_post_meta($newPost, $this->_post_meta_SubmitterIp, $authorIp);
+			
+			foreach ($customFields as $fieldName => $fieldValue) {
+				update_post_meta($newPost, $fieldName, $fieldValue);
+			}
+			
 		}
 		return $newPost;
 	}
